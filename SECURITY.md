@@ -12,7 +12,7 @@ We do not commit to regular security updates or patches for this repository. The
 
 If you discover a security vulnerability, we encourage you to report it to us. While we may not be able to address all reported issues due to the nature of this repository, we appreciate your efforts to help improve the security of the code.
 
-To report a vulnerability, please email us at xxx@bis.org, yyy@bis.org or zzz@bis.org with the details of the issue. Include as much information as possible to help us understand the nature and scope of the vulnerability.
+To report a vulnerability, please email us at [byeungchun.kwon@bis.org](mailto:byeungchun.kwon@bis.org) or [fernando.perez-cruz@bis.org](mailto:fernando.perez-cruz@bis.org) with the details of the issue. Include as much information as possible to help us understand the nature and scope of the vulnerability.
 
 ## Disclaimer
 
