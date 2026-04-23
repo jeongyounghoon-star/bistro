@@ -1,0 +1,12 @@
+# Heavy Python artifacts aren't needed on Vercel (the site only reads the JSON).
+bistro-finetuned/
+data/
+!web/public/data/forecasts.json
+scripts/
+src/
+requirements*.txt
+*.ipynb
+
+__pycache__/
+*.pyc
+.venv/

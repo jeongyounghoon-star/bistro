@@ -1,0 +1,9 @@
+# Extra dependencies for the KR data pipeline + forecast runner.
+# Install alongside requirements.txt when running the local VS Code workflow:
+#   pip install -r requirements.txt -r requirements-kr.txt
+
+python-dotenv==1.0.1
+requests==2.32.3
+lxml==5.3.0
+beautifulsoup4==4.12.3
+html5lib==1.1
