@@ -1,20 +1,18 @@
-import path from "node:path";
-import fs from "node:fs/promises";
 import Dashboard from "./components/Dashboard";
 import type { ForecastBundle } from "./components/types";
 
-async function loadBundle(): Promise<ForecastBundle | null> {
-  const p = path.join(process.cwd(), "public", "data", "forecasts.json");
+function loadBundle(): ForecastBundle | null {
   try {
-    const raw = await fs.readFile(p, "utf-8");
-    return JSON.parse(raw) as ForecastBundle;
+    // Bundled at build time — avoids Vercel serverless FS issues with public/.
+    const data = require("../public/data/forecasts.json");
+    return data as ForecastBundle;
   } catch {
     return null;
   }
 }
 
-export default async function Home() {
-  const bundle = await loadBundle();
+export default function Home() {
+  const bundle = loadBundle();
 
   return (
     <main className="container">
