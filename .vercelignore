@@ -1,10 +1,12 @@
 # Heavy Python artifacts aren't needed on Vercel (the site only reads the JSON).
-bistro-finetuned/
-data/
-!web/public/data/forecasts.json
-scripts/
-src/
-requirements*.txt
+# Patterns are anchored with a leading slash so they only match at the repo root;
+# otherwise `data/` would also exclude `web/public/data/` and the dashboard's
+# forecasts.json would be missing from the Vercel build context.
+/bistro-finetuned/
+/data/
+/scripts/
+/src/
+/requirements*.txt
 *.ipynb
 
 __pycache__/
