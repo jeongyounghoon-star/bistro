@@ -21,16 +21,32 @@ interface Row {
   band?: [number, number];
 }
 
+interface SeriesCardProps {
+  series: SeriesForecast;
+  index: number;
+}
+
+const CHART = {
+  grid: "rgba(163, 177, 168, 0.16)",
+  history: "#edf7f2",
+  median: "#37d5c0",
+  band: "#37d5c0",
+  forecastLine: "#f7c767",
+  tick: "#9ba9a2",
+  tooltipBg: "#101816",
+  tooltipBorder: "rgba(107, 224, 199, 0.28)",
+};
+
 function buildRows(series: SeriesForecast): Row[] {
   const map = new Map<string, Row>();
-  for (const h of series.history) {
-    map.set(h.date, { date: h.date, history: h.value });
+  for (const point of series.history) {
+    map.set(point.date, { date: point.date, history: point.value });
   }
-  for (const f of series.forecast) {
-    const row = map.get(f.date) ?? { date: f.date };
-    row.median = f.median;
-    row.band = [f.lo, f.hi];
-    map.set(f.date, row);
+  for (const point of series.forecast) {
+    const row = map.get(point.date) ?? { date: point.date };
+    row.median = point.median;
+    row.band = [point.lo, point.hi];
+    map.set(point.date, row);
   }
   return Array.from(map.values()).sort((a, b) => (a.date < b.date ? -1 : 1));
 }
@@ -43,123 +59,197 @@ function fmt(v: number | undefined, digits = 2): string {
   });
 }
 
-export default function SeriesCard({ series }: { series: SeriesForecast }) {
+function fmtValue(v: number | undefined, unit: string): string {
+  if (v == null || Number.isNaN(v)) return "—";
+  if (unit === "%" || unit === "KRW/USD") return fmt(v, 2);
+  if (unit === "pt" || unit === "index") return fmt(v, 1);
+  return v.toLocaleString("ko-KR", {
+    notation: Math.abs(v) >= 1_000_000 ? "compact" : "standard",
+    maximumFractionDigits: Math.abs(v) >= 1_000 ? 1 : 2,
+  });
+}
+
+function inferSource(series: SeriesForecast): string {
+  if (series.note?.startsWith("BIS")) return "BIS";
+  if (series.note?.startsWith("ECOS")) return "ECOS";
+  if (series.id.startsWith("bok_")) return "ECOS";
+  if (
+    series.id === "kospi" ||
+    series.id === "usdkrw" ||
+    series.id === "ktb_3y" ||
+    series.id === "corp_aa_3y" ||
+    series.id === "cd_91"
+  ) {
+    return "Naver Finance";
+  }
+  return "Local";
+}
+
+function frequencyLabel(series: SeriesForecast): string {
+  return series.frequency === "Q" ? "분기" : "월간";
+}
+
+function trendLabel(changePct: number | null): string {
+  if (changePct == null) return "데이터 없음";
+  if (Math.abs(changePct) < 0.05) return "변동 없음";
+  return changePct > 0 ? "상승" : "하락";
+}
+
+export default function SeriesCard({ series, index }: SeriesCardProps) {
   const rows = buildRows(series);
   const last = series.history[series.history.length - 1];
   const first = series.forecast[0];
   const end = series.forecast[series.forecast.length - 1];
   const changePct =
-    last && end ? ((end.median - last.value) / Math.abs(last.value)) * 100 : null;
+    last && end && last.value !== 0
+      ? ((end.median - last.value) / Math.abs(last.value)) * 100
+      : null;
+  const source = inferSource(series);
+  const trend = trendLabel(changePct);
+  const trendClass =
+    changePct == null || Math.abs(changePct) < 0.05
+      ? "neutral"
+      : changePct > 0
+        ? "positive"
+        : "negative";
+  const cardClass = `bento-card series-card ${index % 5 === 0 ? "series-card-wide" : ""}`;
 
   return (
-    <div className="card">
-      <div>
-        <h3>{series.title}</h3>
-        <div className="sub">
-          <span>단위: {series.unit}</span>
-          {series.tags.map((t) => (
-            <span key={t} className="tag">#{t}</span>
+    <article className={cardClass} aria-label={`${series.title} 예측 카드`}>
+      <div className="series-card-top">
+        <div>
+          <span className="series-kicker">{source}</span>
+          <h3>{series.title}</h3>
+          <div className="series-meta">
+            <span>{frequencyLabel(series)}</span>
+            <span>단위 {series.unit}</span>
+            <span>{series.forecast_start}부터 전망</span>
+          </div>
+        </div>
+        <div className="tag-row">
+          {series.tags.map((tag) => (
+            <span key={tag} className="tag">
+              {tag}
+            </span>
           ))}
         </div>
       </div>
 
-      <div className="stat-row">
-        <span>현재: <b>{fmt(last?.value)}</b> ({last?.date ?? "—"})</span>
-        <span>
-          {series.forecast_start} 예측:{" "}
-          <b>{fmt(first?.median)}</b>
-        </span>
-        <span>
-          {end?.date} 예측:{" "}
-          <b>{fmt(end?.median)}</b>
-          {changePct != null && (
-            <>
-              {" "}
-              <span style={{ color: changePct >= 0 ? "var(--good)" : "var(--danger)" }}>
-                ({changePct >= 0 ? "+" : ""}
-                {fmt(changePct, 1)}%)
-              </span>
-            </>
-          )}
-        </span>
+      <div className="series-stats">
+        <div className="series-stat">
+          <span>최근 실측</span>
+          <strong>{fmtValue(last?.value, series.unit)}</strong>
+          <small>{last?.date ?? "—"}</small>
+        </div>
+        <div className="series-stat">
+          <span>예측 시작</span>
+          <strong>{fmtValue(first?.median, series.unit)}</strong>
+          <small>{series.forecast_start}</small>
+        </div>
+        <div className="series-stat">
+          <span>마지막 전망</span>
+          <strong>{fmtValue(end?.median, series.unit)}</strong>
+          <small>{end?.date ?? "—"}</small>
+        </div>
+        <div className={`series-stat trend-stat ${trendClass}`}>
+          <span>현재 대비</span>
+          <strong>
+            {changePct == null ? "—" : `${changePct >= 0 ? "+" : ""}${fmt(changePct, 1)}%`}
+          </strong>
+          <small>{trend}</small>
+        </div>
       </div>
 
-      <div className="chart">
+      <div className="chart-frame">
         <ResponsiveContainer width="100%" height="100%">
-          <ComposedChart data={rows} margin={{ top: 10, right: 12, left: 0, bottom: 0 }}>
+          <ComposedChart data={rows} margin={{ top: 12, right: 14, left: 2, bottom: 0 }}>
             <defs>
               <linearGradient id={`band-${series.id}`} x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#7aa7ff" stopOpacity={0.35} />
-                <stop offset="100%" stopColor="#7aa7ff" stopOpacity={0.06} />
+                <stop offset="0%" stopColor={CHART.band} stopOpacity={0.28} />
+                <stop offset="100%" stopColor={CHART.band} stopOpacity={0.04} />
               </linearGradient>
             </defs>
-            <CartesianGrid stroke="#243063" strokeDasharray="2 3" />
+            <CartesianGrid stroke={CHART.grid} strokeDasharray="2 6" vertical={false} />
             <XAxis
               dataKey="date"
-              tick={{ fill: "#95a0c9", fontSize: 11 }}
+              tick={{ fill: CHART.tick, fontSize: 11 }}
+              axisLine={false}
+              tickLine={false}
               interval="preserveStartEnd"
-              minTickGap={32}
+              minTickGap={34}
             />
             <YAxis
-              tick={{ fill: "#95a0c9", fontSize: 11 }}
+              tick={{ fill: CHART.tick, fontSize: 11 }}
+              axisLine={false}
+              tickLine={false}
               domain={["auto", "auto"]}
-              width={56}
+              tickFormatter={(value: number) => fmtValue(value, series.unit)}
+              width={58}
             />
             <Tooltip
               contentStyle={{
-                background: "#111735",
-                border: "1px solid #243063",
+                background: CHART.tooltipBg,
+                border: `1px solid ${CHART.tooltipBorder}`,
                 borderRadius: 8,
+                boxShadow: "0 18px 44px rgba(0, 0, 0, 0.35)",
+                color: "#edf7f2",
                 fontSize: 12,
               }}
-              labelStyle={{ color: "#e6e9f5" }}
-              formatter={(v: number | [number, number], name: string) => {
-                if (Array.isArray(v))
-                  return [`${fmt(v[0])} ~ ${fmt(v[1])}`, "80% 밴드"];
-                return [fmt(v), name];
+              labelStyle={{ color: "#edf7f2", fontWeight: 700 }}
+              formatter={(value: number | [number, number], name: string) => {
+                if (Array.isArray(value)) {
+                  return [
+                    `${fmtValue(value[0], series.unit)} ~ ${fmtValue(value[1], series.unit)}`,
+                    "80% 구간",
+                  ];
+                }
+                return [fmtValue(value, series.unit), name];
               }}
             />
-            <Legend wrapperStyle={{ fontSize: 11, color: "#95a0c9" }} />
+            <Legend wrapperStyle={{ color: CHART.tick, fontSize: 11 }} />
             <ReferenceLine
               x={series.forecast_start}
-              stroke="#7aa7ff"
+              stroke={CHART.forecastLine}
               strokeDasharray="4 4"
-              label={{ value: "예측 시작", fill: "#7aa7ff", fontSize: 10, position: "top" }}
+              label={{
+                value: "예측 시작",
+                fill: CHART.forecastLine,
+                fontSize: 10,
+                position: "top",
+              }}
             />
             <Area
               type="monotone"
               dataKey="band"
               stroke="none"
               fill={`url(#band-${series.id})`}
-              name="80% 밴드"
+              name="80% 구간"
               isAnimationActive={false}
             />
             <Line
               type="monotone"
               dataKey="history"
-              stroke="#e6e9f5"
+              stroke={CHART.history}
               dot={false}
-              strokeWidth={1.6}
-              name="실적"
+              strokeWidth={1.9}
+              name="실측"
               isAnimationActive={false}
             />
             <Line
               type="monotone"
               dataKey="median"
-              stroke="#7aa7ff"
+              stroke={CHART.median}
               dot={false}
-              strokeWidth={1.8}
+              strokeWidth={2}
               strokeDasharray="5 4"
-              name="BISTRO (median)"
+              name="BISTRO 중앙값"
               isAnimationActive={false}
             />
           </ComposedChart>
         </ResponsiveContainer>
       </div>
 
-      {series.note && (
-        <div className="sub" style={{ fontSize: 11 }}>※ {series.note}</div>
-      )}
-    </div>
+      {series.note && <p className="series-note">데이터 메모: {series.note}</p>}
+    </article>
   );
 }

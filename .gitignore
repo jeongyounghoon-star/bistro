@@ -40,12 +40,14 @@ ENV/
 .env
 .env.local
 .env.*.local
+.omx/
 
 # Node / Next.js (web dashboard)
 web/node_modules/
 web/.next/
 web/out/
 web/.vercel/
+web/next-dev*.log
 
 # Note: web/public/data/forecasts.json is committed so Vercel can serve it.
 # Regenerate it with: python scripts/run_kr_forecasts.py
