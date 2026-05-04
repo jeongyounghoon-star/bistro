@@ -27,14 +27,14 @@ interface SeriesCardProps {
 }
 
 const CHART = {
-  grid: "rgba(163, 177, 168, 0.16)",
-  history: "#edf7f2",
-  median: "#37d5c0",
-  band: "#37d5c0",
-  forecastLine: "#f7c767",
-  tick: "#9ba9a2",
-  tooltipBg: "#101816",
-  tooltipBorder: "rgba(107, 224, 199, 0.28)",
+  grid: "#dee1e6",
+  history: "#0a0b0d",
+  median: "#0052ff",
+  band: "#0052ff",
+  forecastLine: "#0046ad",
+  tick: "#5b616e",
+  tooltipBg: "#ffffff",
+  tooltipBorder: "#dee1e6",
 };
 
 function buildRows(series: SeriesForecast): Row[] {
@@ -190,12 +190,12 @@ export default function SeriesCard({ series, index }: SeriesCardProps) {
               contentStyle={{
                 background: CHART.tooltipBg,
                 border: `1px solid ${CHART.tooltipBorder}`,
-                borderRadius: 8,
-                boxShadow: "0 18px 44px rgba(0, 0, 0, 0.35)",
-                color: "#edf7f2",
+                borderRadius: 12,
+                boxShadow: "0 4px 12px rgba(0, 0, 0, 0.04)",
+                color: "#0a0b0d",
                 fontSize: 12,
               }}
-              labelStyle={{ color: "#edf7f2", fontWeight: 700 }}
+              labelStyle={{ color: "#0a0b0d", fontWeight: 400 }}
               formatter={(value: number | [number, number], name: string) => {
                 if (Array.isArray(value)) {
                   return [

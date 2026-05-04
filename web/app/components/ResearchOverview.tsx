@@ -88,7 +88,7 @@ export default function ResearchOverview({ bundle }: { bundle: ForecastBundle })
           <span className="eyebrow">Signal</span>
           <h2>예측은 기준선으로 해석</h2>
           <p>
-            청록색 중앙 경로는 BISTRO의 기준 전망이고, 반투명 밴드는 예측
+            파란색 중앙 경로는 BISTRO의 기준 전망이고, 반투명 밴드는 예측
             불확실성을 나타냅니다. 숫자 하나보다 방향과 범위를 함께 보는 구성입니다.
           </p>
         </article>
